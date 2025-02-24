@@ -12,6 +12,9 @@ lønn: Annual salary in Norwegian Krone (NOK).
 bonus?: Indicates whether the respondent receives a bonus ("Ja" for yes, "Nei" for no)
 """
 import pandas as pd
+import seaborn as sb
+import matplotlib.pyplot as plt
+import streamlit as st
 
 def run():
     df = pd.read_csv("salaries.csv")
@@ -25,6 +28,8 @@ def run():
         "fag" : "expertise",
         "lønn" : "salary"})
     print(df)
+    ax = sb.lineplot(x="expertise", y="salary", data=df)
+    st.pyplot(plt.show())
 
 if __name__ == "__main__":
     run();
