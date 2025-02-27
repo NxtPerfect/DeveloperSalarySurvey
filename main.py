@@ -20,28 +20,22 @@ def run():
     df = pd.read_csv("salaries.csv")
     renameColumnsToEnglish(df)
     renameRowsToEnglish(df)
-    # Norwegian currency to eur
-    # 1 NOK = 0.085706417 EUR
-    df.salary = (df.salary * 0.085706417).round(2)
+
+    convertSalaryToEur(df)
 
     st.dataframe(df)
-    # View expertise/salary plot
-    expertiseOnSalary = sb.barplot(x="expertise", y="salary", data=df)
-    plt.xticks(rotation=45)
-    ylabels = ['{:,.0f}'.format(y) for y in expertiseOnSalary.get_yticks()]
-    expertiseOnSalary.set_yticklabels(ylabels)
+    showExpertiseOnSalaryPlot(df)
+    showResidenceOnSalaryPlot(df)
+    showExperienceOnSalaryPlot(df)
+    showSalaryHistPlot(df)
+    showExperienceHistPlot(df)
+    showGenderHistPlot(df)
+    showGenderOnSalaryPlot(df)
 
-    st.pyplot(expertiseOnSalary.get_figure())
-    # For some reason plot doesn't clear itself
-    # If i don't show it, it gets merged to the next one
-    st.pyplot(plt.show())
+    showTop1Percent(df)
+    showBottom10Percent(df)
+    showMedianPerExpertise(df)
 
-    # residence/salary plot
-    residenceOnSalary = sb.barplot(x="residence", y="salary", data=df)
-    ylabels = ['{:,.2f}'.format(y) for y in residenceOnSalary.get_yticks()]
-    residenceOnSalary.set_yticklabels(ylabels)
-    plt.xticks(rotation=45)
-    st.pyplot(residenceOnSalary.get_figure())
 
 def renameColumnsToEnglish(df: pd.DataFrame) -> None:
     df.rename(columns={
@@ -51,11 +45,17 @@ def renameColumnsToEnglish(df: pd.DataFrame) -> None:
         "arbeidssted" : "residence",
         "arbeidssituasjon" : "employment type and sector",
         "fag" : "expertise",
-        "lønn" : "salary"}, inplace=True)
+        "lønn" : "salary"},
+              inplace=True)
 
 def renameRowsToEnglish(df: pd.DataFrame) -> None:
-    df.replace({'bonus?': {"Ja": "Yes", "Nei": "No"}}, inplace=True)
-    df.replace({'gender': {"mann": "male", "kvinne": "female", "annet / ønsker ikke oppgi": "other / do not wish to specify"}}, inplace=True)
+    df.replace({'bonus?': {"Ja": "Yes",
+                           "Nei": "No"}},
+               inplace=True)
+    df.replace({'gender': {"mann": "male",
+                           "kvinne": "female",
+                           "annet / ønsker ikke oppgi": "other / do not wish to specify"}},
+               inplace=True)
     df.replace({'expertise': {
         "AI / maskinlæring": "AI / machine learning",
         "annet": "other",
@@ -74,6 +74,92 @@ def renameRowsToEnglish(df: pd.DataFrame) -> None:
         "in-house, privat sektor": "in-house, private sector",
         "konsulent": "consultant",
     }}, inplace=True)
+
+def convertSalaryToEur(df: pd.DataFrame) -> None:
+    df.salary = (df.salary * 0.085706417).round(2)
+
+def showExpertiseOnSalaryPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    sb.barplot(x="expertise", y="salary", data=df, ax=ax)
+    ax.tick_params(axis='x', rotation=45)
+    ylabels = ['{:,.0f}'.format(y) for y in ax.get_yticks()]
+    ax.set_yticklabels(ylabels)
+    st.pyplot(fig)
+
+def showResidenceOnSalaryPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    sb.barplot(x="residence", y="salary", data=df)
+    ylabels = ['{:,.2f}'.format(y) for y in ax.get_yticks()]
+    ax.tick_params(axis='x', rotation=45)
+    ax.set_yticklabels(ylabels)
+    st.pyplot(fig)
+
+def showExperienceOnSalaryPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    ylabels = ['{:,.2f}'.format(y) for y in ax.get_yticks()]
+    ax.set_yticklabels(ylabels)
+    sb.kdeplot(x="experience", y="salary", data=df)
+    st.pyplot(fig)
+
+def showSalaryHistPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    sb.histplot(x="salary", data=df)
+    xlabels = ['{:,.0f}'.format(x) for x in ax.get_xticks()]
+    ax.set_xticklabels(xlabels)
+    st.pyplot(fig)
+
+def showExperienceHistPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    sb.histplot(x="experience", data=df)
+    xlabels = ['{:,.0f}'.format(x) for x in ax.get_xticks()]
+    ax.set_xticklabels(xlabels)
+    st.pyplot(fig)
+
+def showGenderHistPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    sb.histplot(x="gender", data=df)
+    xlabels = ['{:,.0f}'.format(x) for x in ax.get_xticks()]
+    ax.set_xticklabels(xlabels)
+    st.pyplot(fig)
+
+def showGenderOnSalaryPlot(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots()
+    sb.barplot(x="gender", y="salary", data=df)
+    xlabels = ['{:,.0f}'.format(x) for x in ax.get_xticks()]
+    ax.set_xticklabels(xlabels)
+    st.pyplot(fig)
+
+def showTop1Percent(df: pd.DataFrame) -> None:
+    howManyRows = len(df)
+    howManyTop1Percent = round(howManyRows * 0.01)
+    st.markdown("# Top 1% Salary")
+    top1Percent = df.nlargest(howManyTop1Percent, "salary")
+    st.text(f"Range: {top1Percent.min()["salary"]:,.0f}€ - {top1Percent.max()["salary"]:,.0f}€")
+    st.text(f"Average: {top1Percent.loc[:, 'salary'].mean():,.2f}€")
+    st.text(f"Median: {top1Percent.loc[:, 'salary'].median():,.2f}€")
+
+    fig, ax = plt.subplots()
+    sb.histplot(x="salary", data=top1Percent)
+    st.pyplot(fig)
+
+def showBottom10Percent(df: pd.DataFrame) -> None:
+    howManyRows = len(df)
+    howManyBottom10Percent = round(howManyRows * 0.1)
+    st.markdown("# Bottom 10% Salary")
+    bottom10Percent = df.tail(howManyBottom10Percent)
+    st.text(f"Range: {bottom10Percent.min()["salary"]:,.0f}€ - {bottom10Percent.max()["salary"]:,.0f}€")
+    st.text(f"Average: {bottom10Percent.loc[:, 'salary'].mean():,.2f}€")
+    st.text(f"Median: {bottom10Percent.loc[:, 'salary'].median():,.2f}€")
+
+    fig, ax = plt.subplots()
+    sb.histplot(x="salary", data=bottom10Percent)
+    st.pyplot(fig)
+
+def showMedianPerExpertise(df: pd.DataFrame) -> None:
+    pass
+    group = df.groupby("expertise")
+    # Get each expertise
+    # show median per each
 
 if __name__ == "__main__":
     run();
