@@ -34,7 +34,7 @@ def run():
 
     showTop1Percent(df)
     showBottom10Percent(df)
-    showMedianPerExpertise(df)
+    showSalaryStatisticsPerExpertise(df)
 
 
 def renameColumnsToEnglish(df: pd.DataFrame) -> None:
@@ -155,11 +155,14 @@ def showBottom10Percent(df: pd.DataFrame) -> None:
     sb.histplot(x="salary", data=bottom10Percent)
     st.pyplot(fig)
 
-def showMedianPerExpertise(df: pd.DataFrame) -> None:
-    pass
-    group = df.groupby("expertise")
-    # Get each expertise
-    # show median per each
+def showSalaryStatisticsPerExpertise(df: pd.DataFrame) -> None:
+    expertises = df['expertise'].unique()
+    for expertise in expertises:
+        salaryPerExpertise = df.loc[df['expertise'].eq(expertise)]['salary']
+        st.markdown(f'## {expertise}')
+        st.markdown(f"Median: {salaryPerExpertise.median():,.2f}€")
+        st.markdown(f'Mode: {salaryPerExpertise.mean():,.2f}€')
+        st.markdown(f'Standard Deviation: {salaryPerExpertise.std():,.2f}€')
 
 if __name__ == "__main__":
-    run();
+    run()

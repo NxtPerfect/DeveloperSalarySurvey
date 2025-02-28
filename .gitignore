@@ -1,3 +1,4 @@
 *.csv
 TODO.md
 venv/
+__pycache__/
